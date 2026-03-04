@@ -54,7 +54,7 @@ public final class AudioService {
                     // 通过 stream 传递数据
                     continuation.yield(pcmData)
                 } else {
-                    print("Failed to convert audio data chunk")
+                    print("❌ Failed to convert audio data chunk")
                 }
             }
         }

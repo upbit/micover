@@ -12,9 +12,7 @@ struct RootView: View {
     
     @StateObject private var sessionCoordinator = AppSessionCoordinator()
     
-    init() {
-        print("RootView init")
-    }
+    init() {}
     
     var body: some View {
         Group {

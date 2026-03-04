@@ -79,7 +79,6 @@ public actor AudioRecorder {
         // Update recording state
         self.isRecording = false
 
-        print("Recording stopped")
     }
     
     #if os(macOS)

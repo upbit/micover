@@ -45,7 +45,6 @@ final class HotkeyManager {
     init() {
         loadConfiguration()
         setupConfigurationObserver()
-        print("HotkeyManager initialized with \(configuration.hotkeys.count) hotkeys")
     }
 
     deinit {
@@ -81,7 +80,6 @@ final class HotkeyManager {
         }
 
         configuration = newConfig
-        print("HotkeyManager configuration updated: \(configuration.hotkeys.count) hotkeys")
 
         if wasMonitoring {
             startMonitoring()
@@ -93,7 +91,6 @@ final class HotkeyManager {
     func startMonitoring() {
         guard !isMonitoring else { return }
 
-        print("Starting hotkey monitoring with \(configuration.hotkeys.count) configured hotkeys...")
 
         // 1. 如果配置了 Fn 键，使用 NSEvent 监听（HotKey 库不支持 Fn 键）
         if configuration.hasFnKey {
@@ -106,13 +103,11 @@ final class HotkeyManager {
         }
 
         isMonitoring = true
-        print("Hotkey monitoring started with \(activeHotKeys.count) HotKey instances and Fn key monitor: \(configuration.hasFnKey)")
     }
 
     func stopMonitoring() {
         guard isMonitoring else { return }
 
-        print("Stopping hotkey monitoring...")
 
         // 移除 Fn 键监听器
         removeFnKeyMonitors()
@@ -121,7 +116,6 @@ final class HotkeyManager {
         activeHotKeys.removeAll()
 
         isMonitoring = false
-        print("Hotkey monitoring stopped")
     }
 
     // MARK: - Private: Fn Key Monitoring (使用 NSEvent)
@@ -138,7 +132,6 @@ final class HotkeyManager {
             return event
         }
 
-        print("📝 Fn key monitors set up (global + local)")
     }
 
     private func removeFnKeyMonitors() {
@@ -160,7 +153,6 @@ final class HotkeyManager {
             // Fn 键按下
             fnKeyPressed = true
             DispatchQueue.main.async { [weak self] in
-                print("✅ Fn key pressed - Start recording")
                 self?.onHotkeyDown?()
                 self?.onFnKeyDown?()
             }
@@ -168,7 +160,6 @@ final class HotkeyManager {
             // Fn 键释放
             fnKeyPressed = false
             DispatchQueue.main.async { [weak self] in
-                print("✅ Fn key released - Stop recording")
                 self?.onHotkeyUp?()
                 self?.onFnKeyUp?()
             }
@@ -181,10 +172,7 @@ final class HotkeyManager {
         // Fn 键由 NSEvent 监听处理，不使用 HotKey 库
         guard hotkey.type != .fnKey else { return }
 
-        guard let key = hotkey.hotKeyKey else {
-            print("⚠️ Warning: Could not create Key for hotkey: \(hotkey.displayName)")
-            return
-        }
+        guard let key = hotkey.hotKeyKey else { return }
 
         let modifiers = hotkey.hotKeyModifiers
 
@@ -193,7 +181,6 @@ final class HotkeyManager {
         // 设置按下回调
         newHotKey.keyDownHandler = { [weak self] in
             DispatchQueue.main.async {
-                print("✅ Hotkey pressed: \(hotkey.displayName)")
                 self?.onHotkeyDown?()
             }
         }
@@ -201,13 +188,11 @@ final class HotkeyManager {
         // 设置释放回调
         newHotKey.keyUpHandler = { [weak self] in
             DispatchQueue.main.async {
-                print("✅ Hotkey released: \(hotkey.displayName)")
                 self?.onHotkeyUp?()
             }
         }
 
         activeHotKeys[hotkey.id] = newHotKey
-        print("📝 Registered hotkey via HotKey library: \(hotkey.displayName) (key: \(key), modifiers: \(modifiers.rawValue))")
     }
 
     // MARK: - Permission Checks
@@ -216,16 +201,13 @@ final class HotkeyManager {
     /// Note: CGEvent.tapCreate() requires app restart to detect newly granted permissions,
     /// so we use AXIsProcessTrusted() which updates reliably during the same session.
     static func checkAccessibilityPermission() -> Bool {
-        let result = AXIsProcessTrusted()
-        print("🔍 HotkeyManager.checkAccessibilityPermission() = \(result)")
-        return result
+        return AXIsProcessTrusted()
     }
 
     static func checkAccessibilityPermissionAsync() async -> Bool {
         return await withCheckedContinuation { continuation in
             Task.detached(priority: .utility) {
                 let result = AXIsProcessTrusted()
-                print("🔍 HotkeyManager.checkAccessibilityPermissionAsync() = \(result)")
                 continuation.resume(returning: result)
             }
         }

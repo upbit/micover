@@ -30,7 +30,6 @@ final class PushToTalkService {
     private var isConfigured = false
 
     init() {
-        print("🚀 PushToTalkService singleton initialized")
         setupHotkeyCallbacks()
     }
 
@@ -39,12 +38,7 @@ final class PushToTalkService {
         speechService: SpeechRecognitionService,
         appState: AppState
     ) {
-        guard !isConfigured else {
-            print("⚠️ PushToTalkService already configured, skipping")
-            return
-        }
-
-        print("⚙️ Configuring PushToTalkService...")
+        guard !isConfigured else { return }
         self.audioService = audioService
         self.speechService = speechService
         self.appState = appState
@@ -60,7 +54,6 @@ final class PushToTalkService {
 
         // 配置后自动启用（如果有权限）
         enableIfPossible()
-        print("✅ PushToTalkService configured successfully")
     }
 
     func enableIfPossible() {
@@ -69,8 +62,6 @@ final class PushToTalkService {
         // 检查权限
         if HotkeyManager.checkAccessibilityPermission() {
             enable()
-        } else {
-            print("⚠️ Push-to-Talk needs accessibility permission")
         }
     }
 
@@ -79,7 +70,6 @@ final class PushToTalkService {
 
         hotkeyManager.startMonitoring()
         isEnabled = true
-        print("✅ Push-to-Talk enabled")
     }
 
     func disable() {
@@ -94,7 +84,6 @@ final class PushToTalkService {
 
         hotkeyManager.stopMonitoring()
         isEnabled = false
-        print("Push-to-Talk disabled")
     }
 
     func requestPermissionAndEnable() {
@@ -188,7 +177,6 @@ final class PushToTalkService {
             // 开始监听识别结果
             startListeningForResults(resultStream)
             
-            print("🎤 Push-to-Talk recording started")
         } catch let error as SpeechRecognitionError {
             print("❌ Failed to start recording: \(error)")
             apiKeyAlertMessage = error.localizedDescription ?? "语音识别服务连接失败"
@@ -199,20 +187,14 @@ final class PushToTalkService {
     }
 
     private func stopRecording() async {
-        print("🔴 stopRecording called")
         guard isRecording,
             let audioService,
             let speechService,
             let appState
-        else {
-            print("⚠️ stopRecording guard failed - isRecording: \(isRecording)")
-            return
-        }
+        else { return }
 
         // 立即记录录音时长（在 recordingStartTime 被清空前）
         appState.onRecordingEnded()
-
-        print("📤 Calling recordingCoordinator.stopRecording...")
         await recordingCoordinator.stopRecording(
             audioService: audioService,
             speechService: speechService,
@@ -220,9 +202,6 @@ final class PushToTalkService {
         )
 
         isWaitingForResult = true
-        print("🛑 Push-to-Talk recording stopped")
-        print("⏳ isWaitingForResult set to: \(isWaitingForResult)")
-        print("🎯 Now waiting for recognition result...")
 
         // Start timeout task - 8 seconds timeout
         resultTimeoutTask?.cancel()
@@ -232,7 +211,6 @@ final class PushToTalkService {
             guard let self = self else { return }
 
             if self.isWaitingForResult {
-                print("⏰ STT result timeout (8s), ending voice input flow...")
                 self.isWaitingForResult = false
                 self.resultListenerTask?.cancel()
                 NSSound.beep()
@@ -254,7 +232,6 @@ final class PushToTalkService {
     // MARK: - Recognition Result Handling
 
     private func startListeningForResults(_ stream: AsyncStream<SpeechRecognitionResult>) {
-        print("🎧 Starting to listen for recognition results...")
         resultListenerTask?.cancel()
         
         resultListenerTask = Task { [weak self] in
@@ -262,8 +239,6 @@ final class PushToTalkService {
             
             for await result in stream {
                 guard let self else { return }
-                
-                print("📨 Received result: text='\(result.text)', isLast=\(result.isLastPackage), hasError=\(result.hasError)")
                 
                 // 检查是否有错误
                 if let error = result.error {
@@ -282,12 +257,10 @@ final class PushToTalkService {
                 }
             }
             
-            print("📭 Result stream ended")
         }
     }
     
     private func handleError(_ error: SpeechRecognitionError) async {
-        print("❌ Recognition error: \(error.localizedDescription ?? "unknown")")
         
         // Cancel timeout task
         resultTimeoutTask?.cancel()
@@ -309,7 +282,6 @@ final class PushToTalkService {
     }
 
     private func handleFinalResult(_ text: String) async {
-        print("📝 Final recognition result: '\(text)'")
         
         // Cancel timeout task
         resultTimeoutTask?.cancel()
@@ -326,7 +298,6 @@ final class PushToTalkService {
         
         // 先尝试匹配智能短语
         if let result = await SmartPhraseService.shared.tryExecute(text: text) {
-            print("✅ Smart phrase executed")
             
             // 记录智能短语历史
             let actionType: HistoryActionType = result.actionType == .openApp ? .smartPhraseOpenApp : .smartPhraseTypeText
@@ -349,11 +320,9 @@ final class PushToTalkService {
         // 粘贴处理后的文本
         if !processedText.isEmpty {
             textInputService.pasteTextAndSend(processedText, sendEnter: shouldSendEnter)
-            print("✅ Text pasted successfully\(shouldSendEnter ? " with Enter" : "")")
         } else if shouldSendEnter {
             // 纯 "over" 的情况：只发送回车
             textInputService.sendEnterKey()
-            print("✅ Enter key sent (over command)")
         }
         
         // 记录普通文本输入历史
@@ -423,7 +392,6 @@ final class PushToTalkService {
             result = String(result.dropLast()) + "。"
         }
         
-        print("🔚 Detected 'over' command, processed: '\(result)'")
         return (result, true)
     }
     
@@ -470,6 +438,5 @@ final class PushToTalkService {
         isConfigured = false
         isWaitingForResult = false
 
-        print("🧹 PushToTalkService cleaned up")
     }
 }

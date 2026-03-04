@@ -64,10 +64,7 @@ struct DashboardView: View {
     
     private func initializeDashboard() async {
         // Only initialize once
-        guard !isInitialized else { 
-            print("Dashboard already initialized, skipping")
-            return 
-        }
+        guard !isInitialized else { return }
         isInitialized = true
         
         // Configure and enable Push-to-Talk

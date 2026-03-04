@@ -22,7 +22,6 @@ final class SmartPhraseStorage {
         do {
             let data = try JSONEncoder().encode(phrases)
             userDefaults.set(data, forKey: Keys.smartPhrases)
-            print("✅ Smart phrases saved: \(phrases.count) items")
         } catch {
             print("❌ Failed to save smart phrases: \(error)")
         }
@@ -31,13 +30,11 @@ final class SmartPhraseStorage {
     /// 加载所有智能短语
     func load() -> [SmartPhrase] {
         guard let data = userDefaults.data(forKey: Keys.smartPhrases) else {
-            print("📭 No saved smart phrases found")
             return []
         }
-        
+
         do {
             let phrases = try JSONDecoder().decode([SmartPhrase].self, from: data)
-            print("✅ Smart phrases loaded: \(phrases.count) items")
             return phrases
         } catch {
             print("❌ Failed to load smart phrases: \(error)")
@@ -65,7 +62,6 @@ final class SmartPhraseStorage {
     /// 清空所有智能短语
     func clear() {
         userDefaults.removeObject(forKey: Keys.smartPhrases)
-        print("🗑️ Smart phrases cleared")
     }
     
     // MARK: - Trigger Count Statistics

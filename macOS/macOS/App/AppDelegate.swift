@@ -16,15 +16,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return false
         }
 
-        print("mainWindow is nil?: \(mainWindow == nil)")
-
         if let window = mainWindow {
             if !window.isVisible {
                 window.makeKeyAndOrderFront(nil)
                 NSApp.activate(ignoringOtherApps: true)
             }
         } else {
-            print("Main window not found - need to create new one")
             NotificationCenter.default.post(
                 name: .reopenMainWindow,
                 object: nil

@@ -109,12 +109,12 @@ public struct CorpusContext: Codable, Sendable {
 public struct CorpusMeta: Codable, Sendable {
     public let boostingTableName: String?
     public let correctTableName: String?
-    public let context: CorpusContext?
+    public let context: String?
 
     public init(
         boostingTableName: String? = nil,
         correctTableName: String? = nil,
-        context: CorpusContext? = nil
+        context: String? = nil
     ) {
         self.boostingTableName = boostingTableName
         self.correctTableName = correctTableName
@@ -183,6 +183,11 @@ public struct RequestMeta: Codable, Sendable {
         guard let context = context else {
             return defaultBigModel
         }
+        let jsonString: String? = {
+            guard let data = try? JSONEncoder().encode(context),
+                  let str = String(data: data, encoding: .utf8) else { return nil }
+            return str
+        }()
         return RequestMeta(
             modelName: "bigmodel",
             enableItn: true,
@@ -190,7 +195,7 @@ public struct RequestMeta: Codable, Sendable {
             enableDdc: false,
             showUtterances: true,
             enableNonstream: false,
-            corpus: CorpusMeta(context: context)
+            corpus: CorpusMeta(context: jsonString)
         )
     }
 }

@@ -19,31 +19,26 @@ final class SettingsStorage {
         do {
             let data = try JSONEncoder().encode(config)
             userDefaults.set(data, forKey: Keys.hotkeyConfiguration)
-            print("Hotkey configuration saved: \(config.hotkeys.count) hotkeys")
         } catch {
-            print("Failed to save hotkey configuration: \(error)")
+            print("❌ Failed to save hotkey configuration: \(error)")
         }
     }
 
     func loadHotkeyConfiguration() -> HotkeyConfiguration {
         guard let data = userDefaults.data(forKey: Keys.hotkeyConfiguration) else {
-            print("No saved hotkey configuration, using default")
             return .defaultConfiguration
         }
 
         do {
-            let config = try JSONDecoder().decode(HotkeyConfiguration.self, from: data)
-            print("✅ Hotkey configuration loaded: \(config.hotkeys.count) hotkeys")
-            return config
+            return try JSONDecoder().decode(HotkeyConfiguration.self, from: data)
         } catch {
-            print("⚠️ Failed to load hotkey configuration: \(error)")
+            print("❌ Failed to load hotkey configuration: \(error)")
             return .defaultConfiguration
         }
     }
 
     func resetHotkeyConfiguration() {
         userDefaults.removeObject(forKey: Keys.hotkeyConfiguration)
-        print("Hotkey configuration reset to default")
     }
     
     // MARK: - Voice Input Settings

@@ -172,10 +172,6 @@ public enum SpeechProtocolCodec {
         let encoder = JSONEncoder()
         let jsonData = try encoder.encode(payload)
 
-        // Debug: 打印实际发送的 JSON
-        if let jsonString = String(data: jsonData, encoding: .utf8) {
-            print("📝 FullClientRequest JSON payload: \(jsonString)")
-        }
 
         guard let compressed = gzipCompress(jsonData) else {
             throw SpeechRecognitionError.compressionFailed

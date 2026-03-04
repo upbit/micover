@@ -20,16 +20,6 @@ final class ASRContextProvider {
 
         guard hotwords != nil || contextEntries != nil else { return nil }
 
-        // Debug: 打印上下文详情
-        if let entries = contextEntries {
-            print("📋 [ASRContext] dialog_ctx entries (\(entries.count)):")
-            for (i, entry) in entries.enumerated() {
-                print("  [\(i)] \(entry.text ?? "")")
-            }
-        } else {
-            print("📋 [ASRContext] no dialog_ctx entries")
-        }
-
         return CorpusContext(
             hotwords: hotwords,
             contextType: contextEntries != nil ? "dialog_ctx" : nil,
@@ -61,7 +51,6 @@ final class ASRContextProvider {
 
         // 1. 当前前台应用
         let appEntry = frontmostAppEntry()
-        print("📋 [ASRContext] frontmostApp: \(appEntry?.text ?? "nil")")
         if let appEntry {
             let tokens = estimateTokens(appEntry.text ?? "")
             if usedTokens + tokens <= Self.maxContextTokenEstimate {
@@ -72,7 +61,6 @@ final class ASRContextProvider {
 
         // 2. 智能短语触发词
         let phraseEntry = smartPhrasesEntry()
-        print("📋 [ASRContext] smartPhrases: \(phraseEntry?.text ?? "nil")")
         if let phraseEntry {
             let tokens = estimateTokens(phraseEntry.text ?? "")
             if usedTokens + tokens <= Self.maxContextTokenEstimate {
@@ -83,7 +71,6 @@ final class ASRContextProvider {
 
         // 3. 最近转录历史（按时间从旧到新）
         let historyEntries = recentTranscriptionEntries(remainingTokens: Self.maxContextTokenEstimate - usedTokens)
-        print("📋 [ASRContext] history: \(historyEntries.count) entries")
         entries.append(contentsOf: historyEntries)
 
         return entries.isEmpty ? nil : entries

@@ -12,25 +12,20 @@ actor RecordingCoordinator {
     ) async throws -> AsyncStream<SpeechRecognitionResult> {
         let hasPermission = await audioService.requestPermission()
         guard hasPermission else {
-            print("❌ Microphone permission denied")
             throw RecordingError.permissionDenied
         }
-        
+
         packetCount = 0
-        
+
         let audioStream = try await audioService.startRecording()
-        print("🎤 Recording started, connecting to speech service...")
-        
+
         let resultStream: AsyncStream<SpeechRecognitionResult>
         do {
             resultStream = try await speechService.startSession()
         } catch {
             await audioService.stopRecording()
-            print("❌ Speech service connection failed, recording stopped")
             throw error
         }
-        
-        print("🔌 Speech service connected, sending audio...")
         
         audioStreamTask = Task {
             for await audioData in audioStream {
@@ -43,14 +38,10 @@ actor RecordingCoordinator {
                         appState.recordedPackets = count
                     }
                     
-                    if packetCount % 10 == 0 {
-                        print("📤 Sent \(packetCount) audio packets")
-                    }
                 } catch {
                     print("❌ Failed to send audio: \(error)")
                 }
             }
-            print("🏁 Audio stream ended, all packets sent")
         }
         
         return resultStream
@@ -63,20 +54,16 @@ actor RecordingCoordinator {
     ) async {
         // 1. 先停止录音，这会让 audioStream 结束
         await audioService.stopRecording()
-        print("🎤 Recording stopped, waiting for audio stream to finish...")
         
         // 2. 等待音频流任务自然完成（处理完所有积压的数据）
         if let task = audioStreamTask {
             await task.value
         }
         audioStreamTask = nil
-        print("✅ Audio stream task completed")
         
         // 3. 所有音频数据都发送完成后，再发送最后一包
         do {
             try await speechService.sendAudioData(Data(), isLast: true)
-            print("📡 Sent final audio packet (isLast=true)")
-            print("📊 Total packets sent: \(packetCount)")
         } catch {
             print("❌ Failed to send final packet: \(error)")
         }

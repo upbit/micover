@@ -113,9 +113,6 @@ public final class SpeechRecognitionService {
         
         try await webSocketTask?.send(.data(requestData))
         
-        if isLast {
-            print("📤 Sent final audio packet (seq=\(seq))")
-        }
     }
     
     /// 断开连接
@@ -145,7 +142,6 @@ public final class SpeechRecognitionService {
         isConnected = true
         connectionStatus = "已连接"
         
-        print("🔌 WebSocket connected to \(url)")
     }
     
     private func sendFullClientRequest() async throws {
@@ -154,14 +150,6 @@ public final class SpeechRecognitionService {
         // 获取 corpus 上下文（热词 + 对话上下文）
         let corpusContext = corpusContextProvider?()
 
-        // Debug: 打印上下文配置状态
-        if let ctx = corpusContext {
-            let hotwordCount = ctx.hotwords?.count ?? 0
-            let contextCount = ctx.contextData?.count ?? 0
-            print("🔥 Corpus context: \(hotwordCount) hotwords, \(contextCount) context entries")
-        } else {
-            print("🔥 No corpus context configured")
-        }
 
         let requestMeta = RequestMeta.bigModelWithContext(corpusContext)
 
@@ -181,13 +169,6 @@ public final class SpeechRecognitionService {
 
         try await webSocketTask?.send(.data(requestData))
 
-        // Debug: 打印完整 payload JSON
-        if let jsonData = try? JSONEncoder().encode(payload),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            print("📤 Sent FullClientRequest (seq=\(seq)): \(jsonString)")
-        } else {
-            print("📤 Sent FullClientRequest (seq=\(seq))")
-        }
     }
     
     private func receiveOneMessage() async throws -> SpeechProtocolCodec.ParsedResponse {
@@ -202,10 +183,9 @@ public final class SpeechRecognitionService {
             guard let response = SpeechProtocolCodec.parseResponse(data) else {
                 throw SpeechRecognitionError.protocolError("无法解析响应")
             }
-            print("📥 Received response: code=\(response.code), isLast=\(response.isLastPackage)")
             return response
         case .string(let text):
-            print("⚠️ Received unexpected text message: \(text)")
+            print("❌ Received unexpected text message: \(text)")
             throw SpeechRecognitionError.protocolError("收到意外的文本消息")
         @unknown default:
             throw SpeechRecognitionError.protocolError("未知消息类型")
@@ -232,10 +212,9 @@ public final class SpeechRecognitionService {
             // 忽略主动取消导致的错误
             let nsError = error as NSError
             if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
-                print("🔌 WebSocket connection closed")
                 return
             }
-            
+
             print("❌ WebSocket receive error: \(error)")
             Task {
                 await self.disconnect()
@@ -278,9 +257,6 @@ public final class SpeechRecognitionService {
             sequence: response.sequence
         )
         
-        if !text.isEmpty || response.isLastPackage {
-            print("📝 Recognition result: \"\(text)\" (isLast=\(response.isLastPackage))")
-        }
         
         resultContinuation?.yield(result)
         

@@ -33,33 +33,26 @@ final class SmartPhraseService {
     func addPhrase(_ phrase: SmartPhrase) -> Bool {
         // 检查触发词唯一性
         if SmartPhraseStorage.shared.triggerExists(phrase.trigger) {
-            print("⚠️ Trigger already exists: \(phrase.trigger)")
             return false
         }
-        
+
         phrases.append(phrase)
         savePhrases()
-        print("✅ Smart phrase added: \(phrase.trigger)")
         return true
     }
     
     /// 更新智能短语
     func updatePhrase(_ phrase: SmartPhrase) {
-        guard let index = phrases.firstIndex(where: { $0.id == phrase.id }) else {
-            print("⚠️ Phrase not found for update: \(phrase.id)")
-            return
-        }
-        
+        guard let index = phrases.firstIndex(where: { $0.id == phrase.id }) else { return }
+
         phrases[index] = phrase
         savePhrases()
-        print("✅ Smart phrase updated: \(phrase.trigger)")
     }
     
     /// 删除智能短语
     func deletePhrase(_ phrase: SmartPhrase) {
         phrases.removeAll { $0.id == phrase.id }
         savePhrases()
-        print("🗑️ Smart phrase deleted: \(phrase.trigger)")
     }
     
     /// 切换启用状态
@@ -101,8 +94,6 @@ final class SmartPhraseService {
             return nil
         }
         
-        print("🎯 Smart phrase matched: '\(phrase.trigger)' -> \(phrase.actionType.displayName)")
-        
         do {
             try await executeAction(phrase)
             
@@ -130,8 +121,6 @@ final class SmartPhraseService {
         
         // 刷新 AppState 以更新 UI
         appState?.loadTodayStats()
-        
-        print("📊 Trigger recorded for phrase: \(phrase.trigger)")
     }
     
     /// 标准化文本用于匹配：去除首尾空格和标点，转小写
@@ -169,7 +158,6 @@ final class SmartPhraseService {
             return
         }
         textInputService.pasteText(text)
-        print("✅ Text typed: \(text.prefix(30))...")
     }
     
     private func openApp(bundleID: String, name: String) throws {
@@ -180,19 +168,16 @@ final class SmartPhraseService {
             let configuration = NSWorkspace.OpenConfiguration()
             configuration.activates = true
             
-            workspace.openApplication(at: url, configuration: configuration) { app, error in
+            workspace.openApplication(at: url, configuration: configuration) { _, error in
                 if let error {
                     print("❌ Failed to open app: \(error.localizedDescription)")
-                } else {
-                    print("✅ App opened: \(name)")
                 }
             }
             return
         }
-        
+
         // 备用方案：尝试用名称打开
         if workspace.launchApplication(name) {
-            print("✅ App launched by name: \(name)")
             return
         }
         
@@ -205,9 +190,7 @@ final class SmartPhraseService {
         }
         
         let success = NSWorkspace.shared.open(url)
-        if success {
-            print("✅ URL opened: \(urlString)")
-        } else {
+        if !success {
             throw SmartPhraseError.executionFailed("无法打开 URL: \(urlString)")
         }
     }

@@ -23,7 +23,6 @@ final class CustomWordStorage {
             return
         }
         userDefaults.set(data, forKey: Keys.customWords)
-        print("✅ Saved \(words.count) custom words")
     }
 
     /// 加载所有自定义词条

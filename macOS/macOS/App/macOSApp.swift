@@ -16,9 +16,7 @@ struct macOSApp: App {
     @State private var pushToTalkService = PushToTalkService()
     @State private var appState = AppState()
 
-    init() {
-        print("macOSApp init")
-    }
+    init() {}
     
     var body: some Scene {
         Window("", id: AppConstants.Window.mainWindowID) {
@@ -38,7 +36,6 @@ struct macOSApp: App {
                 .onReceive(
                     NotificationCenter.default.publisher(for: .reopenMainWindow)
                 ) { _ in
-                    print("FloatingWindowView onReceive - reopening main window")
                     openWindow(id: AppConstants.Window.mainWindowID)
                 }
         }

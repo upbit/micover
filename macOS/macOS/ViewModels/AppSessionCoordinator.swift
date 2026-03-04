@@ -46,8 +46,6 @@ class AppSessionCoordinator: ObservableObject {
         // This avoids the cached AXIsProcessTrusted() which may return stale values
         let hasAccessibilityPermission = await HotkeyManager.checkAccessibilityPermissionAsync()
         
-        print("🔐 Permission check: microphone=\(hasMicrophonePermission), accessibility=\(hasAccessibilityPermission)")
-
         permissionsGranted = hasMicrophonePermission && hasAccessibilityPermission
     }
     

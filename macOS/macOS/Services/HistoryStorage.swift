@@ -36,7 +36,6 @@ final class HistoryStorage {
         do {
             return try JSONDecoder().decode(HistorySettings.self, from: data)
         } catch {
-            print("❌ Failed to decode history settings: \(error)")
             return .default
         }
     }
@@ -45,12 +44,11 @@ final class HistoryStorage {
         do {
             let data = try JSONEncoder().encode(settings)
             userDefaults.set(data, forKey: Keys.settings)
-            print("✅ History settings saved")
             
             // 保存设置后立即清理过期数据
             cleanupExpiredRecords()
         } catch {
-            print("❌ Failed to save history settings: \(error)")
+            print("❌ Failed to save history settings: \(error.localizedDescription)")
         }
     }
     
@@ -59,18 +57,13 @@ final class HistoryStorage {
     /// 添加新记录
     func addRecord(_ record: HistoryRecord) {
         let settings = getSettings()
-        guard settings.isEnabled else {
-            print("📝 History is disabled, skipping record")
-            return
-        }
+        guard settings.isEnabled else { return }
         
         let weekKey = weekKey(for: record.timestamp)
         var records = loadRecords(forKey: weekKey)
         records.append(record)
         saveRecords(records, forKey: weekKey)
-        
-        print("✅ History record added: \(record.transcribedText.prefix(30))...")
-        
+
         // 发送通知以便 UI 刷新
         NotificationCenter.default.post(name: .historyRecordAdded, object: nil)
     }
@@ -114,7 +107,6 @@ final class HistoryStorage {
                     let records = try decoder.decode([HistoryRecord].self, from: data)
                     allRecords.append(contentsOf: records)
                 } catch {
-                    print("❌ Failed to decode history records for \(key): \(error)")
                 }
             }
 
@@ -262,7 +254,6 @@ final class HistoryStorage {
                     saveRecords(records, forKey: key)
                 }
                 
-                print("✅ History record deleted")
                 return
             }
         }
@@ -276,7 +267,6 @@ final class HistoryStorage {
             userDefaults.removeObject(forKey: key)
         }
         
-        print("🗑️ All history records cleared")
     }
     
     /// 清理过期记录
@@ -302,9 +292,6 @@ final class HistoryStorage {
             }
         }
         
-        if deletedCount > 0 {
-            print("🧹 Cleaned up \(deletedCount) expired history weeks")
-        }
     }
     
     // MARK: - Export
@@ -313,10 +300,7 @@ final class HistoryStorage {
     func exportToJSON() -> URL? {
         let records = loadAllRecords()
         
-        guard !records.isEmpty else {
-            print("⚠️ No records to export")
-            return nil
-        }
+        guard !records.isEmpty else { return nil }
         
         do {
             let encoder = JSONEncoder()
@@ -334,7 +318,6 @@ final class HistoryStorage {
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
             try data.write(to: tempURL)
             
-            print("✅ History exported to: \(tempURL.path)")
             return tempURL
         } catch {
             print("❌ Failed to export history: \(error)")
@@ -362,7 +345,6 @@ final class HistoryStorage {
                         try FileManager.default.removeItem(at: destinationURL)
                     }
                     try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
-                    print("✅ History exported to: \(destinationURL.path)")
                 } catch {
                     print("❌ Failed to save exported file: \(error)")
                 }
@@ -389,7 +371,6 @@ final class HistoryStorage {
         do {
             return try JSONDecoder().decode([HistoryRecord].self, from: data)
         } catch {
-            print("❌ Failed to decode history records for \(key): \(error)")
             return []
         }
     }
@@ -399,7 +380,7 @@ final class HistoryStorage {
             let data = try JSONEncoder().encode(records)
             userDefaults.set(data, forKey: key)
         } catch {
-            print("❌ Failed to save history records: \(error)")
+            print("❌ Failed to save history records: \(error.localizedDescription)")
         }
     }
     
