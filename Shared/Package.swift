@@ -16,7 +16,8 @@ let package = Package(
             targets: ["Shared"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", exact: "4.2.2")
+        .package(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", exact: "4.2.2"),
+        .package(url: "https://github.com/teunlao/swift-ai-sdk.git", from: "0.17.3")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -24,7 +25,8 @@ let package = Package(
         .target(
             name: "Shared",
             dependencies: [
-                .product(name: "KeychainAccess", package: "KeychainAccess")
+                .product(name: "KeychainAccess", package: "KeychainAccess"),
+                .product(name: "SwiftAISDK", package: "swift-ai-sdk"),
             ]),
 
     ]
