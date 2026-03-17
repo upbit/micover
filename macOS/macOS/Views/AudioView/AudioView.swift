@@ -294,7 +294,7 @@ struct AIShimmerIndicator: View {
         HStack(spacing: 6) {
             Image(systemName: "sparkles")
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.purple)
+                .foregroundStyle(.purple.opacity(0.5))
 
             HStack(spacing: 4) {
                 ForEach(0..<3, id: \.self) { index in
@@ -302,7 +302,7 @@ struct AIShimmerIndicator: View {
                         .fill(Color.primary)
                         .frame(width: 4, height: 4)
                         .scaleEffect(isAnimating ? 1.0 : 0.5)
-                        .opacity(isAnimating ? 1.0 : 0.3)
+                        .opacity(isAnimating ? 0.5 : 0.1)
                         .animation(
                             .easeInOut(duration: 0.6)
                                 .repeatForever(autoreverses: true)
