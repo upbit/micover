@@ -18,19 +18,22 @@ struct FloatingWindowView: View {
                 ).onAppear {
                     positionWindow(isActive: true)
                 }
-            } else if pushToTalkService.isOptimizingWithAI {
-                AIShimmerIndicator()
-                    .onAppear {
-                        positionWindow(isActive: true)
-                    }
             } else if pushToTalkService.isWaitingForResult {
-                LoadingDotsIndicator(
-                    dotCount: 4,
-                    dotSize: 4,
-                    spacing: 6,
-                    color: .gray,
-                    animationDuration: 0.6
-                ).onAppear {
+                let optimizing = pushToTalkService.isOptimizingWithAI
+                Group {
+                    if optimizing {
+                        AIShimmerIndicator()
+                    } else {
+                        LoadingDotsIndicator(
+                            dotCount: 4,
+                            dotSize: 4,
+                            spacing: 6,
+                            color: .gray,
+                            animationDuration: 0.6
+                        )
+                    }
+                }
+                .onAppear {
                     positionWindow(isActive: true)
                 }
             } else {

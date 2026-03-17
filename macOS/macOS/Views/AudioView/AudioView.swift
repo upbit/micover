@@ -286,48 +286,35 @@ struct LoadingDotsIndicator: View {
     }
 }
 
-/// AI 优化中 shimmer 指示器（Apple Intelligence 风格）
+/// AI 优化中指示器（sparkles + 紫色脉冲点）
 struct AIShimmerIndicator: View {
-    @State private var shimmerOffset: CGFloat = -1
+    @State private var isAnimating = false
 
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 6) {
             Image(systemName: "sparkles")
                 .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.purple)
 
-            Text("AI")
-                .font(.system(size: 10, weight: .semibold))
-        }
-        .foregroundColor(.purple.opacity(0.7))
-        .overlay(
-            GeometryReader { geo in
-                let width = geo.size.width
-                LinearGradient(
-                    colors: [.clear, .cyan, .white, .cyan, .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(width: width * 0.8)
-                .offset(x: shimmerOffset * width)
-            }
-            .mask(
-                HStack(spacing: 5) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 10, weight: .medium))
-
-                    Text("AI")
-                        .font(.system(size: 10, weight: .semibold))
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { index in
+                    Circle()
+                        .fill(Color.primary)
+                        .frame(width: 4, height: 4)
+                        .scaleEffect(isAnimating ? 1.0 : 0.5)
+                        .opacity(isAnimating ? 1.0 : 0.3)
+                        .animation(
+                            .easeInOut(duration: 0.6)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double(index) * 0.2),
+                            value: isAnimating
+                        )
                 }
-            )
-        )
+            }
+        }
         .frame(height: 16)
         .onAppear {
-            withAnimation(
-                .easeInOut(duration: 1.2)
-                .repeatForever(autoreverses: true)
-            ) {
-                shimmerOffset = 1
-            }
+            isAnimating = true
         }
     }
 }

@@ -209,9 +209,11 @@ final class PushToTalkService {
         resultTimeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 15_000_000_000)  // 15 seconds
 
+            // sleep 被 cancel 时 CancellationError 会被 try? 吞掉，必须显式检查
+            guard !Task.isCancelled else { return }
             guard let self = self else { return }
 
-            if self.isWaitingForResult {
+            if self.isWaitingForResult || self.isOptimizingWithAI {
                 self.isWaitingForResult = false
                 self.isOptimizingWithAI = false
                 self.resultListenerTask?.cancel()
@@ -285,7 +287,6 @@ final class PushToTalkService {
     }
 
     private func handleFinalResult(_ text: String) async {
-        
         // Cancel timeout task
         resultTimeoutTask?.cancel()
         resultTimeoutTask = nil
