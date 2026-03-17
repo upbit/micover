@@ -318,9 +318,18 @@ final class PushToTalkService {
             return
         }
         
-        // AI 文本优化
-        var textForProcessing = text
-        if AITextOptimizationService.shared.isAvailable {
+        // 先检测 Over 命令，去除 over 后再交给 AI 优化
+        let (strippedText, shouldSendEnter) = processOverCommand(text)
+
+        // 统计 Over 命令触发次数
+        if shouldSendEnter {
+            StatsStorage.shared.incrementOverCommandCount()
+            appState?.loadTodayStats()
+        }
+
+        // AI 文本优化（输入是去除 over 后的纯内容文本）
+        var processedText = strippedText
+        if AITextOptimizationService.shared.isAvailable && !strippedText.isEmpty {
             isOptimizingWithAI = true
             let dictionary = CustomWordStorage.shared.getEnabledWords().joined(separator: "\n")
             let recentRecords = HistoryStorage.shared.loadRecords(offset: 0, limit: 10)
@@ -328,19 +337,10 @@ final class PushToTalkService {
             let history = recentRecords.reversed()
                 .map { $0.transcribedText }
                 .joined(separator: "\n")
-            textForProcessing = await AITextOptimizationService.shared.optimize(
-                text, dictionary: dictionary, history: history
+            processedText = await AITextOptimizationService.shared.optimize(
+                strippedText, dictionary: dictionary, history: history
             )
             isOptimizingWithAI = false
-        }
-
-        // 处理 "over" 结尾命令
-        let (processedText, shouldSendEnter) = processOverCommand(textForProcessing)
-
-        // 统计 Over 命令触发次数
-        if shouldSendEnter {
-            StatsStorage.shared.incrementOverCommandCount()
-            appState?.loadTodayStats()
         }
 
         // 粘贴处理后的文本
