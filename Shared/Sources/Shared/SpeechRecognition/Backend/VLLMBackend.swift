@@ -139,42 +139,74 @@ final class VLLMBackend: SpeechBackend {
     // MARK: - Private: HTTP
 
     private func postTranscription(wavData: Data) async throws -> String {
-        // 构建 URL: {baseURL}/audio/transcriptions
-        guard let url = URL(string: "\(baseURL)/audio/transcriptions") else {
+        // 构建 URL: {baseURL}/chat/completions
+        guard let url = URL(string: "\(baseURL)/chat/completions") else {
             throw SpeechRecognitionError.invalidBaseURL
         }
 
-        // 构建 multipart 请求体
-        var form = MultipartFormData()
-        form.addFile(name: "file", fileName: "audio.wav", mimeType: "audio/wav", data: wavData)
-        form.addField(name: "model", value: modelName)
-        // response_format: 默认使用 json（简单格式 {"text": "..."}）
+        // WAV 数据 base64 编码，构建 data URL
+        let audioBase64 = wavData.base64EncodedString()
+        let audioDataURL = "data:audio/wav;base64,\(audioBase64)"
+
+        // 构建 Chat Completions 请求体
+        let chatRequest = VLLMChatRequest(
+            model: modelName,
+            messages: [
+                VLLMChatMessage(
+                    role: "user",
+                    content: [
+                        VLLMChatContent(
+                            type: "audio_url",
+                            audioUrl: VLLMAudioURL(url: audioDataURL)
+                        )
+                    ]
+                )
+            ],
+            stream: true
+        )
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue(form.contentType, forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 60  // 长音频可能需要较长处理时间
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60
 
         if let apiKey, !apiKey.isEmpty {
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
 
-        request.httpBody = form.finalize()
+        request.httpBody = try JSONEncoder().encode(chatRequest)
 
-        let (data, response) = try await session.data(for: request)
+        let (bytes, response) = try await session.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw SpeechRecognitionError.connectionFailed("无效的服务器响应")
         }
 
         guard httpResponse.statusCode == 200 else {
-            let message = parseErrorMessage(from: data) ?? "HTTP \(httpResponse.statusCode)"
+            // 读取全部错误体
+            var errorData = Data()
+            for try await byte in bytes {
+                errorData.append(byte)
+            }
+            let message = parseErrorMessage(from: errorData) ?? "HTTP \(httpResponse.statusCode)"
             throw SpeechRecognitionError.httpError(statusCode: httpResponse.statusCode, message: message)
         }
 
-        // 解析 OpenAI 格式响应
-        let transcription = try JSONDecoder().decode(VLLMTranscriptionResponse.self, from: data)
-        return transcription.text
+        // 解析 SSE 流：每行 "data: {...}" 或 "data: [DONE]"
+        var fullText = ""
+        for try await line in bytes.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let jsonStr = String(line.dropFirst(6))
+            guard jsonStr != "[DONE]" else { break }
+            guard let jsonData = jsonStr.data(using: .utf8),
+                  let chunk = try? JSONDecoder().decode(VLLMChatStreamChunk.self, from: jsonData)
+            else { continue }
+            if let content = chunk.choices.first?.delta.content {
+                fullText += content
+            }
+        }
+
+        return fullText
     }
 
     private func parseErrorMessage(from data: Data) -> String? {
